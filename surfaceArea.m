@@ -1,6 +1,5 @@
-clear all
-
-c = readmatrix("sphere.csv","Range", 2);
+% clear all
+% c = readmatrix("sphere.csv","Range", 2);
 
 % CARTESIAN MESH
 % meshRes = 10; % number of points between the North and Spouth poles
@@ -9,20 +8,20 @@ c = readmatrix("sphere.csv","Range", 2);
 % col = reshape(col,numel(col),1);
 
 % UNIFORM MESH
-meshRes = 10000; % number of points on the solid surface
-[uniformSphMesh,~] = spheretri(meshRes); % creating a uniform spherical mesh
-uniformSphMesh = transpose(rotx(90*rand)*roty(90*rand)*rotz(90*rand)*uniformSphMesh'); % random rotation to avoid points on the North and South poles.
-[azi,ele,~] = cart2sph(uniformSphMesh(:,1), uniformSphMesh(:,2), uniformSphMesh(:,3)); % transforming from caetesian to spherical coordinates
-col = -ele + pi/2;
-for i = 1 : size(azi,1)
-    if azi(i,1) < 0
-        azi(i,1) = 2*pi + azi(i,1);
-    end
-end
+% meshRes = 10000; % number of points on the solid surface
+% [uniformSphMesh,~] = spheretri(meshRes); % creating a uniform spherical mesh
+% uniformSphMesh = transpose(rotx(90*rand)*roty(90*rand)*rotz(90*rand)*uniformSphMesh'); % random rotation to avoid points on the North and South poles.
+% [azi,ele,~] = cart2sph(uniformSphMesh(:,1), uniformSphMesh(:,2), uniformSphMesh(:,3)); % transforming from caetesian to spherical coordinates
+% col = -ele + pi/2;
+% for i = 1 : size(azi,1)
+%     if azi(i,1) < 0
+%         azi(i,1) = 2*pi + azi(i,1);
+%     end
+% end
+% 
+% S = SA(c,azi,col,meshRes);
 
-S = SA(c,azi,col,meshRes);
-
-function S = SA(c,azi,col,meshRes)
+function S = surfaceArea(c,azi,col)
     s = size(c,2);
 
     % Declaring gradX, gradY, and gradZ vectors   
