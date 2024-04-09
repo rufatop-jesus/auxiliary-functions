@@ -16,139 +16,88 @@
 % c = readmatrix("irregular.csv","Range", 2);
 % 
 % % Creating a uniform polar mesh to use as example
+% meshRes = 100; % number of points in the uniform mesh
+% PB = createPB(c,meshRes);
+% [azi,ele,r] = cart2sph(PB(:,1), PB(:,2), PB(:,3)); % polar cooerdinates
 % 
-% meshRes = 100; % uniform mesh resolution    
-% [uniformSphMesh,~] = spheretri(meshRes);
-% 
-% [azi,ele,~] = cart2sph(uniformSphMesh(:,1), uniformSphMesh(:,2), uniformSphMesh(:,3));
-% 
-% col = -ele + pi/2;
-% for i = 1 : size(azi,1)
-%     if azi(i,1) < 0
-%         azi(i,1) = 2*pi + azi(i,1);
-%     end
-% end
+% % Generating a table of azimuth, elevation and radius of the
+% % solid shape. The method emplys an evenly spaced grid over the sphere.
+% surfaceInterpolant = scatteredInterpolant(azi,ele,r, 'linear','linear'); % Matlab interpolant function
+% [aziTable,eleTable] = meshgrid((-180:1:179)*pi/180,(-90:1:89)*pi/180); % evenly spaced grid of azimuth and elevation
+% rI = surfaceInterpolant(aziTable,eleTable); % interpolated radius book
 % 
 % OA = [0;0;0];
-% OB = [1.5;0;0];
+% OB = [0.5;0;0];
 % 
-% alphaA = 0;
-% betaA = 0;
+% alphaA = pi/4;
+% betaA = pi/6;
 % gammaA = 0;
 % 
 % alphaB = 0;
 % betaB = 0;
 % gammaB = 0;
 % 
-% cA = c;
-% cB = c;
 % 
-% o = Overlap(OA,alphaA,betaA,gammaA,cA, OB,alphaB,betaB,gammaB,cB, azi, col);
+% o = Overlap(aziTable, eleTable, OA,alphaA,betaA,gammaA,rI, OB,alphaB,betaB,gammaB,PB);
 
-function o = overlap(OA,alphaA,betaA,gammaA,cA, OB,alphaB,betaB,gammaB,cB, azi, col)
+
+function o = overlap(OA,alphaA,betaA,gammaA,rA, OB,alphaB,betaB,gammaB,PBB)
     o = false;
+
+    % Definition of particle B cartesian coordinates 
+    xB = PBB(:,1);
+    yB = PBB(:,2);
+    zB = PBB(:,3);
+   
+    % Rotation of particle B according to alphaB, betaB and gammaB
+    v = rotx(rad2deg(alphaB)) * roty(rad2deg(betaB)) * rotz(rad2deg(gammaB)) * [xB,yB,zB]';
     
-    % sA = number of spherical harmonics used to describe the solid A
-    sA = size(cA,2);
+    % Translation of particle B according to OB
+    xB = v(1,:) + OB(1,1) - OA(1,1);
+    yB = v(2,:) + OB(2,1) - OA(2,1);
+    zB = v(3,:) + OB(3,1) - OA(3,1);
+
+    % Rotation of particle A.
     
-    % Calculating distances and polar coordinates of surface points of solid A (aziA,
-    % eleA, rA) with respect to the center of solid B (OB)
-    xBA = zeros(size(azi));
-    yBA = zeros(size(azi));
-    zBA = zeros(size(azi));
+    v = rotx(rad2deg(-alphaA)) * roty(rad2deg(-betaA)) * rotz(rad2deg(-gammaA)) * [xB;yB;zB];
+ 
+    % Calculation of the polar coordinates of particle B relative to the
+    % center of particle A.
 
-    degree = 1;
-    order = -1;
+    [aziB,eleB,rB] = cart2sph(v(1,:), v(2,:), v(3,:));
 
-    for i = 1 : sA  
-        Y = SH(degree,order,azi,col); % real spherical harmonic function
-
-        xBA = xBA + cA(1,i)*Y;
-        yBA = yBA + cA(2,i)*Y;
-        zBA = zBA + cA(3,i)*Y;
-                
-        % Update degree and order
-        if order+1 > degree
-            degree = degree+1;
-            order = -degree;
-        else
-            order = order+1;
-        end
-    end
-
-    v = [xBA,yBA,zBA];
-    v = rotx(alphaA*180/pi) * roty(betaA*180/pi) * rotz(gammaA*180/pi) * v';
-    
-    xBA = v(1,:)' + OA(1,1) - OB(1,1);
-    yBA = v(2,:)' + OA(2,1) - OB(2,1);
-    zBA = v(3,:)' + OA(3,1) - OB(3,1);
-    
-    [aziBA,eleBA,rBA] = cart2sph(xBA,yBA,zBA);
-    
-    % sB = number of spherical harmonics used to describe the solid B
-    sB = size(cB,2);
-
-    % Calculating distances and polar coordinates of surface points of solid B (aziB,
-    % eleB, rB) with respect to the center of solid B (OB).
-    xB = zeros(size(azi));
-    yB = zeros(size(azi));
-    zB = zeros(size(azi));
-
-    degree = 1;
-    order = -1;
-
-    for i = 1 : sB  
-        Y = SH(degree,order,azi,col); % real spherical harmonic function
-
-        xB = xB + cB(1,i)*Y;
-        yB = yB + cB(2,i)*Y;
-        zB = zB + cB(3,i)*Y;
-                
-        % Update degree and order
-        if order+1 > degree
-            degree = degree+1;
-            order = -degree;
-        else
-            order = order+1;
-        end
-    end
-
-    v = [xB,yB,zB];
-    v = rotx(alphaB*180/pi) * roty(betaB*180/pi) * rotz(gammaB*180/pi) * v';
-    
-    xB = v(1,:)';
-    yB = v(2,:)';
-    zB = v(3,:)';
-    
-    [aziB,eleB,rB] = cart2sph(xB,yB,zB);
-
-    % Calculating the box around particles A and B
-    % boxA = [min(xA),max(xA);...
-    %         min(xA),max(xA);...
-    %         min(zA),max(zA)];
-    % 
-    % boxB = [min(xB),max(xB);...
-    %         min(xB),max(xB);...
-    %         min(zB),max(zB)];
-
-    scatter(aziB,eleB)
-    hold on
-    scatter(aziBA,eleBA)
-    hold off
-    figure
-
-    interprB = scatteredInterpolant(aziB,eleB,rB, 'natural','linear');
+    % scatter(aziB,eleB)
+    % hold on
+    % scatter(aziBA,eleBA)
+    % hold off
+    % figure
     
     % If the distance between a point of A and OB is lower than the
     % distance between the point of B and OB in the same polar coordinate,
     % then there is a collision
-    if nnz(rBA < interprB(aziBA,eleBA)) > 0
-        o = true;
+    posAzi = floor(rad2deg(aziB));
+    posEle = floor(rad2deg(eleB));
+
+    for i = 1 : size(rB,2) 
+        % posAzi(1,i)
+        % posEle(1,i)
+        if rB(1,i) < rA(posEle(1,i)+91, posAzi(1,i)+181)
+            o = true;
+            break
+        end
     end
 
-    o
-    scatter3(xBA,yBA,zBA)
-    hold on
-    scatter3(xB,yB,zB)
-    hold off
+    % o
+    % [xA,yA,zA] = sph2cart(reshape(aziTable,1,numel(aziTable)), reshape(eleTable,1,numel(eleTable)), reshape(rA,1,numel(rA)));
+    % xB = v(1,:);
+    % yB = v(2,:);
+    % zB = v(3,:);
+    % 
+    % scatter3(xA,yA,zA)
+    % xlim([-2 2])
+    % ylim([-2 2])
+    % zlim([-2 2])
+    % hold on
+    % scatter3(xB,yB,zB)
+    % hold off
 end
