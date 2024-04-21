@@ -39,9 +39,9 @@ Lz = power(size(latxyz,1)*volume*power(zFeret,2)/(solidVolumeFraction*yFeret*xFe
 alpha = (Lz*0.99 - zFeret) / NUC;
 latxyz(:,3) = alpha*latxyz(:,3) + zFeret/2;
 
-plotSpheres(latxyz(:,1),latxyz(:,2),latxyz(:,3),xFeret,yFeret,zFeret)
+plotEllipsoids(latxyz(:,1),latxyz(:,2),latxyz(:,3),xFeret,yFeret,zFeret)
 
-function S = plotSpheres(x,y,z,xFeret,yFeret,zFeret)
+function S = plotEllipsoids(x,y,z,xFeret,yFeret,zFeret)
     s = size(x,1);
     [unitX, unitY, unitZ] = ellipsoid(0.0, 0.0, 0.0, xFeret/2, yFeret/2, zFeret/2);
     for i = 1 : s
