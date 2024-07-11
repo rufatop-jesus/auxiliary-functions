@@ -1,7 +1,7 @@
-% From the center coordinates (x y z), calculates which cells are occupied
-% by the particle with diamter partDiameter.
+% From the center coordinates (x y z), calculate which cells make the cube
+% circunscribed about the particle with diamter = partDiameter.
 
-function f = initPart2cells(nCells, cellSize, partDiameter, x, y, z)
+function cells = initPart2cells(nCells, cellSize, partDiameter, x, y, z)
     
     xLowerCell = ceil((x-partDiameter) / cellSize);
     yLowerCell = ceil((y-partDiameter) / cellSize);
@@ -11,9 +11,9 @@ function f = initPart2cells(nCells, cellSize, partDiameter, x, y, z)
     yUpperCell = ceil((y+partDiameter) / cellSize);
     zUpperCell = ceil((z+partDiameter) / cellSize);
 
-    f = zeros((xUpperCell-xLowerCell) * (yUpperCell-yLowerCell) * (zUpperCell-zLowerCell), 3);  
+    cells = zeros((xUpperCell-xLowerCell+1) * (yUpperCell-yLowerCell+1) * (zUpperCell-zLowerCell+1), 3); 
 
-    n = 1;
+    cellIndex = 1;
     for i = xLowerCell : xUpperCell
         for j = yLowerCell : yUpperCell
             for k = zLowerCell : zUpperCell
@@ -46,10 +46,10 @@ function f = initPart2cells(nCells, cellSize, partDiameter, x, y, z)
                     zCell = k;
                 end
 
-                f(n,1) = xCell;
-                f(n,2) = yCell;
-                f(n,3) = zCell;
-                n = n+1;
+                cells(cellIndex,1) = xCell;
+                cells(cellIndex,2) = yCell;
+                cells(cellIndex,3) = zCell;
+                cellIndex = cellIndex+1;
             end
         end
     end
