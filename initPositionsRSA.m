@@ -6,19 +6,20 @@ function [cell2parts, part2cells, PBIndex, X, Y, Z] = initPositionsRSA(nPart, pa
     Y = zeros(nPart, 1);
     Z = zeros(nPart, 1);
     
+    % PND weighted average diameter
+    avgDiameter = dot(partNumberDistribution,diameter) / sum(partNumberDistribution,"all");
+
     % Mesh of cubic cells to speed-up collision detection
-    nCells = ceil(L * sqrt(3) / diameter(end,1));
+    nCells = ceil(L * sqrt(3) / avgDiameter);
     cellSize = L / nCells;
     cell2parts = cell(nCells,nCells,nCells); % list of particles within a cell   
     part2cells = cell(nPart,1); % list of cells a particles occupies
 
     totAdParticles = 0; % total of adsorbed particles
-    isCandidate = zeros(1, nPart); % list with 0s and 1s. If the element (1, i) == 1, then the particle i is a candidate for collision
 
     % For every particle diameter do
     for i = size(partNumberDistribution, 1) : -1 : 1
         i
-        collisions = 0;
         adParticles = 0; % total of adsorbed particles of the current size
 
         % While added particles < total of particles in the current size do
@@ -49,39 +50,29 @@ function [cell2parts, part2cells, PBIndex, X, Y, Z] = initPositionsRSA(nPart, pa
             Z(part) = zTest;
             
             % Identify the cells occupied by the particle under adsorption
-            cells = initPart2cells(nCells, cellSize, diameter(i,1), xTest, yTest, zTest);
+            cells = initPart2Cells(nCells, cellSize, diameter(i,1), xTest, yTest, zTest);
             
             % For every cell in cells find the particles that occupy it.
-            for c = 1 : size(cells,1)
-                isCandidate(cell2parts{cells(c,1), cells(c,2), cells(c,3)}) = 1;
-            end
-            collisionCandidates = find(isCandidate == 1); % list with the indexes of candidate particles for collision
-            isCandidate(collisionCandidates) = 0; % clean the isCandidate array
-            
-            collisionList = particleOverlapSphericalContPSD(collisionCandidates, cellSize, part, PBIndex, diameter, L, X(1:part), Y(1:part), Z(1:part));
-
-            % If there is no collision do
-            if numel(collisionList) == 0
-                % Register the cells the particle under adsorption occupy in the part2cells array
-                part2cells{part,1} = cells; 
+            for candidateCell = 1 : size(cells,1)
+                collisionCandidates = cell2parts{cells(candidateCell,1), cells(candidateCell,2), cells(candidateCell,3)};
                 
-                % Register the particle under adsorption in the cell2parts array 
-                for c = 1 : size(cells,1)
-                    cell2parts{cells(c,1), cells(c,2), cells(c,3)} = [cell2parts{cells(c,1), cells(c,2), cells(c,3)} part];
-                end
+                % If there is no collision do
+                if not(particleOverlapSphericalContPSD(collisionCandidates, cellSize, part, PBIndex, diameter, L, X(1:part), Y(1:part), Z(1:part)))
+                    
+                    % Register the cells the particle under adsorption occupy in the part2cells array
+                    part2cells{part,1} = cells; 
+                    
+                    % Register the particle under adsorption in the cell2parts array 
+                    for adsorbingCell = 1 : size(cells,1)
+                        cell2parts{cells(adsorbingCell,1), cells(adsorbingCell,2), cells(adsorbingCell,3)} = [cell2parts{cells(adsorbingCell,1), cells(adsorbingCell,2), cells(adsorbingCell,3)} part];
+                    end
+    
+                    adParticles = adParticles + 1; % sum one in the adsorbed particles counter                  
+                    break
+                 end
 
-                adParticles = adParticles + 1; % sum one in the adsorbed particles counter
-
-                
-            else
-                collisions = collisions + 1;
-            end
-            
+            end         
         end
-        % Volume percentage occupied by adsorbed particles
-        dot(partNumberDistribution(end : -1 : i, 1) , (pi/6) * power(diameter(end : -1: i, 1),3)) / power(L,3) 
-        % Collision rate
-        adParticles / (collisions + adParticles);
 
         totAdParticles = totAdParticles + adParticles; % sum the counter of the size to the aggregate counter
     end
