@@ -2,22 +2,31 @@
 % calculate how much cells will the particle move on each cartesian
 % direction and returns the cells it will occupy.
 
-function f = testPart2cells(cells, nCells, cellSize, Xtest, Ytest, Ztest, X, Y, Z)
-    f = cells;
+function newCells = testPart2Cells(cells, nCells, cellSize, XTest, YTest, ZTest, X, Y, Z)
+    % Initialize the newCells arrays equal to the current cells
+    newCells = cells;
     
-    xCellMove = ceil(Xtest / cellSize) - ceil(X / cellSize);
-    yCellMove = ceil(Ytest / cellSize) - ceil(Y / cellSize);
-    zCellMove = ceil(Ztest / cellSize) - ceil(Z / cellSize);
+    % Calculate how many cells were passed by the random movement in each
+    % cartesian direction
+    xCellMove = ceil(XTest / cellSize) - ceil(X / cellSize);
+    yCellMove = ceil(YTest / cellSize) - ceil(Y / cellSize);
+    zCellMove = ceil(ZTest / cellSize) - ceil(Z / cellSize);
     
-    f(:,1) = f(:,1) + xCellMove;
-    f(:,2) = f(:,2) + yCellMove;
-    f(:,3) = f(:,3) + zCellMove;
-
-    if any(f>nCells,'all')
-        f(f>nCells) = f(f>nCells) - nCells;
+    % Sum(subtract) the number of passed by cells to the current cells to reach the
+    % new cells
+    newCells(:,1) = newCells(:,1) + xCellMove;
+    newCells(:,2) = newCells(:,2) + yCellMove;
+    newCells(:,3) = newCells(:,3) + zCellMove;
+    
+    % Correct for cells outside the upper boundary with a periodic boundary
+    % condition
+    if any(newCells>nCells,'all')
+        newCells(newCells>nCells) = newCells(newCells>nCells) - nCells;
     end
-
-    if any(f<1,'all')
-        f(f<1) = f(f<1) + nCells;
+    
+    % Correct for cells outside the lower boundary with a periodic boundary
+    % condition
+    if any(newCells<1,'all')
+        newCells(newCells<1) = newCells(newCells<1) + nCells;
     end
 end

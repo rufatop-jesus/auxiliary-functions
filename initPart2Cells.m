@@ -1,7 +1,7 @@
 % From the center coordinates (x y z), calculate which cells make the cube
 % circunscribed about the particle with diamter = partDiameter.
 
-function cells = initPart2cells(nCells, cellSize, partDiameter, x, y, z)
+function cells = initPart2Cells(nCells, cellSize, partDiameter, x, y, z)
     
     xLowerCell = ceil((x-partDiameter) / cellSize);
     yLowerCell = ceil((y-partDiameter) / cellSize);
