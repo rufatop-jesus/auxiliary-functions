@@ -10,47 +10,14 @@ function cells = initPart2Cells(nCells, cellSize, partDiameter, x, y, z)
     xUpperCell = ceil((x+partDiameter) / cellSize);
     yUpperCell = ceil((y+partDiameter) / cellSize);
     zUpperCell = ceil((z+partDiameter) / cellSize);
-
-    cells = zeros((xUpperCell-xLowerCell+1) * (yUpperCell-yLowerCell+1) * (zUpperCell-zLowerCell+1), 3); 
-
-    cellIndex = 1;
-    for i = xLowerCell : xUpperCell
-        for j = yLowerCell : yUpperCell
-            for k = zLowerCell : zUpperCell
-
-                if i > nCells
-                    xCell = i - nCells;
-                elseif i < 1
-                    xCell = i + nCells;
-                else
-                    xCell = i;
-                end
-
-                if j > nCells
-                    yCell = j - nCells;
-
-                elseif j < 1
-                    yCell = j + nCells;
-
-                else
-                    yCell = j;
-                end
-
-                if k > nCells
-                    zCell = k - nCells;
-
-                elseif k < 1
-                    zCell = k + nCells;
-
-                else
-                    zCell = k;
-                end
-
-                cells(cellIndex,1) = xCell;
-                cells(cellIndex,2) = yCell;
-                cells(cellIndex,3) = zCell;
-                cellIndex = cellIndex+1;
-            end
-        end
-    end
+    
+    % Build meshgrid with the cells
+    [xCells, yCells, zCells] = meshgrid(xLowerCell:xUpperCell, yLowerCell:yUpperCell, zLowerCell:zUpperCell);
+    
+    % Reshape the meshgrid to a n-by-3 matrix
+    cells = [reshape(xCells,[],1), reshape(yCells,[],1), reshape(zCells,[],1)];
+    
+    % Applt periodic boundary condition for collision detection
+    cells(cells > nCells) = cells(cells > nCells) - nCells;
+    cells(cells < 1) = cells(cells < 1) + nCells;
 end
