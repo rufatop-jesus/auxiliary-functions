@@ -3,6 +3,7 @@
 % direction and returns the cells it will occupy.
 
 function newCells = testPart2Cells(cells, nCells, cellSize, XTest, YTest, ZTest, X, Y, Z)
+    
     % Initialize the newCells arrays equal to the current cells
     newCells = cells;
     
@@ -20,13 +21,9 @@ function newCells = testPart2Cells(cells, nCells, cellSize, XTest, YTest, ZTest,
     
     % Correct for cells outside the upper boundary with a periodic boundary
     % condition
-    if any(newCells>nCells,'all')
-        newCells(newCells>nCells) = newCells(newCells>nCells) - nCells;
-    end
+    newCells(newCells>nCells) = newCells(newCells>nCells) - nCells;
     
     % Correct for cells outside the lower boundary with a periodic boundary
     % condition
-    if any(newCells<1,'all')
-        newCells(newCells<1) = newCells(newCells<1) + nCells;
-    end
+    newCells(newCells<1) = newCells(newCells<1) + nCells;
 end
