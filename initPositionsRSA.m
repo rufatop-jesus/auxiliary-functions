@@ -1,22 +1,15 @@
-function [cell2parts, part2cells, nCells, cellSize, PBIndex, X, Y, Z] = initPositionsRSA(nPart, partNumberDistribution, diameter, L)
+function [cell2parts, nCells, cellSize, PBIndex, X, Y, Z] = initPositionsRSA(nPart, partNumberDistribution, diameter, avgDiameter, L)
     
     % Initialize arrays
     PBIndex = zeros(nPart, 1);
     X = zeros(nPart, 1);
     Y = zeros(nPart, 1);
     Z = zeros(nPart, 1);
-    
-    % PND weighted average diameter
-    % avgDiameter = dot(partNumberDistribution,diameter) / nPart;
-    avgDiameter = max(diameter,[],"all");
 
     % Mesh of cubic cells to speed-up collision detection
-    nCells = ceil(L * sqrt(3) / avgDiameter);
+    nCells = ceil(L / avgDiameter);
     cellSize = L / nCells;
-    cell2parts = zeros(power(nCells,3), ceil(nPart/power(nCells,3))); % list of particles within a cell. nPart/power(nCells,3) is the estimated max number of particles within a cell
-    nAddedParts = zeros(size(cell2parts,1),1); % array with the number of added particles on each cell of the cell2parts array.
-
-    part2cells = zeros(nPart, ceil(power(max(diameter,[],"all"),3)/ power(cellSize,3))); % list of cells a particles occupies. power(max(diameter,[],"all"),3)/ power(cellSize,3) is the estmated max number of cells a particle can occupy
+    cell2parts = cell(nCells,nCells,nCells); % list of particles within a cell
 
     totAdParticles = 0; % total of adsorbed particles
 
@@ -24,6 +17,10 @@ function [cell2parts, part2cells, nCells, cellSize, PBIndex, X, Y, Z] = initPosi
     for i = size(partNumberDistribution, 1) : -1 : 1
         i
         adParticles = 0; % total of adsorbed particles of the current size
+        partDiameter = diameter(i,1);
+
+        % Minimum distance to even be considered a collision candidate
+        collisionDist = (partDiameter + diameter(:,1)) / 2;
 
         % While added particles < total of particles in the current size do
         while adParticles < partNumberDistribution(i,1)
@@ -48,35 +45,29 @@ function [cell2parts, part2cells, nCells, cellSize, PBIndex, X, Y, Z] = initPosi
             
             % Identify the cells occupied by the particle under adsorption
             cells = initPart2Cells(nCells, cellSize, diameter(i,1), xTest, yTest, zTest);
-            cells = sub2ind([nCells,nCells,nCells], cells(:,1), cells(:,2), cells(:,3));
+
+            collisionCandidates = horzcat(cell2parts{cells(1,:)});
+
+            dx = abs(X(collisionCandidates) - X(part));
+            dy = abs(Y(collisionCandidates) - Y(part));
+            dz = abs(Z(collisionCandidates) - Z(part));
+
+            dx = sign(L-2*dx) .* (dx - 0.5*L) + 0.5*L;
+            dy = sign(L-2*dy) .* (dy - 0.5*L) + 0.5*L;
+            dz = sign(L-2*dz) .* (dz - 0.5*L) + 0.5*L;
+
+            dist = sqrt(power(dx,2) + power(dy,2) + power(dz,2));
+
+            if any(dist <= collisionDist(PBIndex(collisionCandidates)), "all")
+                continue
             
-            % collisionCandidates = [];
-            % % For every cell in cells find the particles that occupy it.
-            % for testingCell = 1 : size(cellsInd,1)
-            %     if nAddedParts(cellsInd(testingCell)) > 0
-            %         collisionCandidates = [collisionCandidates cell2parts(cellsInd(testingCell), 1:nAddedParts(cellsInd(testingCell)))];
-            %     end
-            % end
-            collisionCandidates = unique(nonzeros(cell2parts(cells,:)));
-
-            % Test for collision
-            collision = particleOverlapSphericalContPSDBool(L, diameter(PBIndex(part),1), X(part), Y(part), Z(part),...
-                                                            diameter(PBIndex(collisionCandidates),1),...
-                                                            X(collisionCandidates), Y(collisionCandidates), Z(collisionCandidates));
-            
-            % If there is no collision do
-            if not(collision)
-
-                % Register the cells the particle under adsorption occupy in the part2cells array
-                part2cells(part, 1 : size(cells,1)) = cells'; 
-
+            else
                 % Register the particle under adsorption in the cell2parts array 
-                for adsorbingCell = 1 : size(cells,1)
-                    cell2parts(cells(adsorbingCell,1), nAddedParts(adsorbingCell)+1) = part;
+                for c = 1 : numel(cells)
+                    cell2parts{cells(1,c)} = [cell2parts{cells(1,c)} part];
                 end
 
                 adParticles = adParticles + 1; % sum one in the adsorbed particles counter       
-                nAddedParts(cells,1) = nAddedParts(cells,1) + 1; % sum one on the cells the particle 'part' occupies
             end
          
         end
