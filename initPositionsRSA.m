@@ -15,6 +15,7 @@ function [cell2parts, nCells, cellSize, PBIndex, X, Y, Z] = initPositionsRSA(nPa
 
     % For every particle diameter do
     for i = size(partNumberDistribution, 1) : -1 : 1
+        tic
         i
         adParticles = 0; % total of adsorbed particles of the current size
         partDiameter = diameter(i,1);
@@ -72,5 +73,7 @@ function [cell2parts, nCells, cellSize, PBIndex, X, Y, Z] = initPositionsRSA(nPa
          
         end
         totAdParticles = totAdParticles + adParticles; % sum the counter of the size to the aggregate counter
+        toc
     end
+    
 end
