@@ -25,8 +25,10 @@ function cells = initPart2Cells(nCells, cellSize, partDiameter, x, y, z)
     cells = [xCells; yCells; zCells];
     
     % Apply periodic boundary condition for collision detection
-    cells(cells > nCells) = cells(cells > nCells) - nCells;
-    cells(cells < 1) = cells(cells < 1) + nCells;
+    % cells(cells > nCells) = cells(cells > nCells) - nCells;
+    % cells(cells < 1) = cells(cells < 1) + nCells;
+
+    cells = cells + nCells * ( (cells < 1) - (cells > nCells) );
 
     % cells = cells - nCells * ( sign(cells - nCells) + abs(sign(cells - nCells)) ) / 2; 
     % cells = cells - nCells * ( sign(cells - 1) - abs(sign(cells - 1)) ) / 2; 
