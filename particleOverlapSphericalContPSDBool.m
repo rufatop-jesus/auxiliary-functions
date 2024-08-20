@@ -1,35 +1,22 @@
 % Verify if there is particle overlap between the particle "part" and all
 % the candidates in "collisionCandidates" inside the cell with positions x,y,z
 function collision = particleOverlapSphericalContPSDBool(L, partDiameter, xPart, yPart, zPart,...
-                                                    candidateDiameter, xCandidate, yCandidate, zCandidate)
+                                                         candidateDiameter, xCandidate, yCandidate, zCandidate)
     collision = false;
-    
-    % For all the collision candidates inside the cell do
-    for i = 1 : size(candidateDiameter,1)
-        
-        dx = abs(xCandidate(i) - xPart);
-        dy = abs(yCandidate(i) - yPart);
-        dz = abs(zCandidate(i) - zPart);
- 
-        % If particles are in the same cell but too distant, they may be overlapping through a boundary.
-        if dx > L-dx
-            dx = L-dx;
-        end
 
-        if dy > L-dy
-            dy = L-dy;
-        end
+    dx = abs(xCandidate - xPart);
+    dy = abs(yCandidate - yPart);
+    dz = abs(zCandidate - zPart);
 
-        if dz > L-dz
-            dz = L-dz;
-        end
+    % If particles are collision candidates but too distant, they may be overlapping through a boundary.
+    dx = sign(L-2*dx) .* (dx - 0.5*L) + 0.5*L;
+    dy = sign(L-2*dy) .* (dy - 0.5*L) + 0.5*L;
+    dz = sign(L-2*dz) .* (dz - 0.5*L) + 0.5*L;
+
+    dist = sqrt(power(dx,2) + power(dy,2) + power(dz,2));
         
-        dist = sqrt(power(dx,2) + power(dy,2) + power(dz,2)); % distance between centers
-        
-        % If distance between centers < diameter, then there is a collision
-        if and(dist < (partDiameter + candidateDiameter(i))/2, dist > 0)
-            collision = true;
-            return
-        end
+    % If distance between centers < diameter, then there is a collision
+    if any(dist <= (partDiameter + candidateDiameter)/2 & dist > 0, "all")
+        collision = true;
     end
 end
